@@ -271,13 +271,16 @@ fn read_signed_varint(index: &mut usize, table: &[u8]) -> isize {
     }
 }
 
-fn validate_linetable(table: &[u8]) -> bool {
+fn validate_linetable(table: &[u8], context: Option<&str>) -> bool {
     if table.iter().any(|&byte| byte & 64 == 0) {
         true
     } else {
         eprintln!("Invalid line table detected! Contents:");
         for (i, byte) in table.iter().enumerate() {
             eprintln!("Index {}: byte = {:#010b} ({})", i, byte, byte);
+        }
+        if let Some(ctx) = context {
+            eprintln!("Context: {}", ctx);
         }
         false
     }
@@ -322,7 +325,7 @@ macro_rules! CompactCodeObjectImpl {
                 let mut bytecode_address: i32 = 0;
 
                 // validate table
-                if !validate_linetable(table) {
+                if !validate_linetable(table, Some(&format!("lasti: {}, first_lineno: {}", lasti, self.first_lineno()))) {
                     eprintln!("Invalid line table: no termination byte found");
                     return -1;
                 }
