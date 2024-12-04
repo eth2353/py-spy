@@ -301,12 +301,30 @@ macro_rules! CompactCodeObjectImpl {
                 self.co_localsplusnames as *mut Self::TupleObject
             }
 
+            fn validate_linetable(table: &[u8]) -> bool {
+                if table.iter().any(|&byte| byte & 64 == 0) {
+                    true
+                } else {
+                    eprintln!("Invalid line table detected! Contents:");
+                    for (i, byte) in table.iter().enumerate() {
+                        eprintln!("Index {}: byte = {:#010b} ({})", i, byte, byte);
+                    }
+                    false
+                }
+            }
+
             fn get_line_number(&self, lasti: i32, table: &[u8]) -> i32 {
                 // unpack compressed table format from python 3.11
                 // https://github.com/python/cpython/pull/91666/files
                 let lasti = lasti - offset_of(self, &self.co_code_adaptive) as i32;
                 let mut line_number: i32 = self.first_lineno();
                 let mut bytecode_address: i32 = 0;
+
+                // validate table
+                if !validate_linetable(table) {
+                    eprintln!("Invalid line table: no termination byte found");
+                    return -1;
+                }
 
                 let mut index: usize = 0;
                 loop {
