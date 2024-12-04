@@ -271,6 +271,19 @@ fn read_signed_varint(index: &mut usize, table: &[u8]) -> isize {
     }
 }
 
+fn validate_linetable(table: &[u8]) -> bool {
+    if table.iter().any(|&byte| byte & 64 == 0) {
+        true
+    } else {
+        eprintln!("Invalid line table detected! Contents:");
+        for (i, byte) in table.iter().enumerate() {
+            eprintln!("Index {}: byte = {:#010b} ({})", i, byte, byte);
+        }
+        false
+    }
+}
+
+
 // Use for 3.11 and 3.12
 macro_rules! CompactCodeObjectImpl {
     ($py: ident, $bytesobject: ident, $stringobject: ident) => {
@@ -299,18 +312,6 @@ macro_rules! CompactCodeObjectImpl {
             }
             fn varnames(&self) -> *mut Self::TupleObject {
                 self.co_localsplusnames as *mut Self::TupleObject
-            }
-
-            fn validate_linetable(table: &[u8]) -> bool {
-                if table.iter().any(|&byte| byte & 64 == 0) {
-                    true
-                } else {
-                    eprintln!("Invalid line table detected! Contents:");
-                    for (i, byte) in table.iter().enumerate() {
-                        eprintln!("Index {}: byte = {:#010b} ({})", i, byte, byte);
-                    }
-                    false
-                }
             }
 
             fn get_line_number(&self, lasti: i32, table: &[u8]) -> i32 {
