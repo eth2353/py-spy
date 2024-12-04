@@ -259,9 +259,12 @@ impl Iterator for Sampler {
 
 impl Drop for Sampler {
     fn drop(&mut self) {
-        self.rx = None;
+        self.rx = None; // Clear the receiver
         if let Some(t) = self.sampling_thread.take() {
-            t.join().unwrap();
+            // Handle potential errors when joining the thread
+            if let Err(e) = t.join() {
+                eprintln!("Error while joining sampling thread: {:?}", e);
+            }
         }
     }
 }
